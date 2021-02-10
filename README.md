@@ -1,4 +1,4 @@
-# go-react: A quick and usable development method for integrating Go and React
+# go-react: A quick and usable development and deployment method for integrating Go and React
 
 ## Purpose
 
