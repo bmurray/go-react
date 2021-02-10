@@ -17,11 +17,13 @@ Usage of go-react:
   -dir string
         Directory where the static built app resides (default "./react-app/build/")
   -embed string
-        Directory where the static built embeded app resides (default "/react-app/build/")
+        Directory where the static built embeded app resides (1.16+) (default "react-app/build")
   -listen string
         Listen on address (default ":8080")
   -mode string
-        Mode to serve REACT site: proxy, dir, embed (default "proxy")
+        Mode to serve REACT site: proxy, dir, pkger, embed  (default "proxy")
+  -pkger string
+        Directory where the static built embeded app resides (default "/react-app/build/")
   -proxy string
         Address to proxy requests to (default "http://localhost:3000/")
 ```
@@ -66,7 +68,7 @@ go run main.go -mode dir
 ```
 
 
-### Embed mode
+### Packaged mode (pre 1.16)
 
 This method will build the react code into a deployment/production version, then embed it in the binary. This means you only need to produce a single binary for distribution without needing to deploy the react code as well. I find this very useful for programs that need a user interface but dont want the heft of a full update system. 
 
@@ -93,7 +95,7 @@ Build and run the binary
 ```
 go build -o go-react main.go pkged.go
 
-./go-react -mode embed
+./go-react -mode pkger
 
 ```
 
@@ -101,3 +103,23 @@ Alternatively, the Makefile has all these steps:
 ```
 make run
 ```
+
+### Embed mode (1.16+)
+
+This provides the same methods as the packager method, but uses the new 1.16+ interface. 
+
+First, build the react code into a deployment/production version
+
+```
+cd react-app/
+npm build
+```
+
+Next, run the code. The files are automatically embeded. 
+
+```
+go run main.go -mode embed
+```
+
+
+

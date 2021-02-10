@@ -1,5 +1,5 @@
 run: pkged.go 
-	go run main.go pkged.go -mode embed
+	go run main.go pkged.go -mode pkger
 
 pkged.go: react-app/build
 	pkger -o ./ -include /react-app/build

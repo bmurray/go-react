@@ -1,8 +1,10 @@
 package main
 
 import (
+	"embed"
 	"encoding/json"
 	"flag"
+	"io/fs"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -12,14 +14,19 @@ import (
 	"github.com/markbates/pkger"
 )
 
+//go:embed react-app/build
+var embeded embed.FS
+
 func main() {
-	mode := flag.String("mode", "proxy", "Mode to serve REACT site: proxy, dir, embed")
+	mode := flag.String("mode", "proxy", "Mode to serve REACT site: proxy, dir, pkger, embed ")
 	// Proxy mode proxies all other connections to the npm server
 	proxy := flag.String("proxy", "http://localhost:3000/", "Address to proxy requests to")
 	// Dir follows general filesystem pathing rules
 	dir := flag.String("dir", "./react-app/build/", "Directory where the static built app resides")
 	// Embed needs to be absolute, based on the arguments of pkger. See Makefile
-	embed := flag.String("embed", "/react-app/build/", "Directory where the static built embeded app resides")
+	packaged := flag.String("pkger", "/react-app/build/", "Directory where the static built embeded app resides")
+	// Embed uses the new 1.16 embed functions to offer what pkger does
+	embed := flag.String("embed", "react-app/build", "Directory where the static built embeded app resides (1.16+)")
 	listen := flag.String("listen", ":8080", "Listen on address")
 	flag.Parse()
 
@@ -40,9 +47,17 @@ func main() {
 	case "dir":
 		// Dir mode is useful if you build your react app but don't want to embed it in the binary, such as Docker deploys
 		mux.Handle("/", http.FileServer(EmbedDir{http.Dir(*dir)}))
+	case "pkger":
+		// Pkger mode serves files that are embedded in the binary. Very useful for one-file distribution
+		mux.Handle("/", http.FileServer(EmbedDir{pkger.Dir(*packaged)}))
 	case "embed":
-		// Embed mode serves files that are embedded in the binary. Very useful for one-file distribution
-		mux.Handle("/", http.FileServer(EmbedDir{pkger.Dir(*embed)}))
+		// Embed uses the new 1.16+ Embed functionality
+		filesystem := fs.FS(embeded)
+		static, err := fs.Sub(filesystem, *embed)
+		if err != nil {
+			log.Fatal("Cannot open filesystem", err)
+		}
+		mux.Handle("/", http.FileServer(EmbedDir{http.FS(static)}))
 	default:
 		// Any other mode would assume you have a reverse proxy, like nginx, that filters traffic
 		log.Println("No react mode; this only works if you have a frontend reverse proxy")
